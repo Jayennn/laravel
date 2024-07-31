@@ -6,6 +6,7 @@ use App\Models\Book;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class BookController extends Controller
 {
@@ -13,9 +14,9 @@ class BookController extends Controller
     {
         $books = Book::all();
         if($books->isEmpty()){
-            return response()->json(["message" => "No books found"], 404);
+            return $this->notFoundResponse($books, "Books not found");
         }
-        return response()->json($books);
+        return $this->successResponse($books, "Books retrieved successfully");
     }
 
     function store(Request $request): JsonResponse
@@ -36,12 +37,21 @@ class BookController extends Controller
 
     function update(Request $request, int $id): JsonResponse
     {
-        $validated = $request->validate([
+        $validated = Validator::make($request->all(), [
             'title' => 'required|max:255',
         ]);
 
         $book = Book::findOrFail($id);
         $book->update($validated);
         return response()->json($book);
+    }
+
+    function destroy(int $id): JsonResponse
+    {
+        $book = Book::findOrFail($id);
+        $book->delete();
+        return response()->json([
+            "message" => "Book successfully deleted"
+        ], 200);
     }
 }
