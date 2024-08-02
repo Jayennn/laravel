@@ -35,7 +35,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['cors']], function () {
     });
 
 
-    Route::group(['prefix' => 'books'], function () {
+    Route::group(['prefix' => 'books', 'middleware' => ['auth:sanctum']], function () {
         Route::get('/', [BookController::class, 'index']);
         Route::post('/', [BookController::class, 'store']);
         Route::get('/{id}', [BookController::class, 'show']);

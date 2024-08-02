@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -50,19 +51,16 @@ class UserController extends Controller
             return $this->invalidFieldResponse($credentials->errors());
         }
 
-        try {
-            $user = User::where('name', $request->name)->first();
-
-            if(!$user || !Hash::check($request->password, $user->password)) {
-                return $this->errorResponse(null, 'Invalid credentials', 401);
-            }
-
-            $token = $user->createToken('auth_token')->plainTextToken;
-            dd($token);
-            return $this->successResponse($users, 'User login successfully.', 201);
-
-        } catch (\Throwable $exception) {
-            return $this->errorResponse($exception->getMessage());
+        if(!Auth::attempt(['name' => $request->name, 'password' => $request->password])) {
+            return $this->errorResponse(null, 'Unauthorized', 401);
         }
+
+        $user = Auth::user();
+        $token = $user->createToken('MyApp')->plainTextToken;
+        return $this->successResponse([
+            'user' => $user,
+            'token' => $token
+        ], 'User logged in successfully.');
+
     }
 }

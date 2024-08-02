@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
 
@@ -27,4 +28,28 @@ class Handler extends ExceptionHandler
             //
         });
     }
+
+    public function render($request, Throwable $e){
+        if($e instanceof AuthenticationException){
+
+            if($request->expectsJson()){
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication failed. Please log in to access this resource.',
+                    'error_code' => 'AUTH_001'
+                ], 401);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication failed. Please log in to access this resource.',
+                'error_code' => 'WEB_AUTH_001'
+            ], 401);
+
+        }
+
+        return parent::render($request, $e);
+    }
+
+
 }
