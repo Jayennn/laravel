@@ -12,7 +12,7 @@ class BookController extends Controller
 {
     function index(): JsonResponse
     {
-        $books = Book::all();
+        $books = Book::with('category')->get();
         if($books->isEmpty()){
             return $this->notFoundResponse($books, "Books not found");
         }
@@ -21,11 +21,14 @@ class BookController extends Controller
 
     function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'title' => 'required|max:255',
+        $validated = Validator::make($request->all(), [
+            'title' => 'required|string',
+            'category_id' => 'required|integer',
         ]);
 
+
         $book = Book::create($validated);
+
         return response()->json($book, 201);
     }
 
@@ -37,13 +40,15 @@ class BookController extends Controller
 
     function update(Request $request, int $id): JsonResponse
     {
+        $book = Book::findOrFail($id);
+
         $validated = Validator::make($request->all(), [
-            'title' => 'required|max:255',
+            'title' => 'sometimes|required|max:20',
+            'category_id' => 'sometimes|required|exists:categories,id',
         ]);
 
-        $book = Book::findOrFail($id);
-        $book->update($validated);
-        return response()->json($book);
+        $book->update($validated->validated());
+        return $this->successResponse($book, "Book updated successfully");
     }
 
     function destroy(int $id): JsonResponse

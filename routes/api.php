@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BookController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -35,12 +36,18 @@ Route::group(['prefix' => 'v1', 'middleware' => ['cors']], function () {
     });
 
 
-    Route::group(['prefix' => 'books', 'middleware' => ['auth:sanctum']], function () {
+    /*'middleware' => ['auth:sanctum']*/
+    Route::group(['prefix' => 'books'], function () {
         Route::get('/', [BookController::class, 'index']);
         Route::post('/', [BookController::class, 'store']);
         Route::get('/{id}', [BookController::class, 'show']);
         Route::put('/{id}', [BookController::class, 'update']);
         Route::delete('/{id}', [BookController::class, 'destroy']);
+    });
+
+    Route::group(['prefix' => 'categories'], function () {
+            Route::get('/', [CategoryController::class, 'index']);
+        Route::post('/', [CategoryController::class, 'store']);
     });
 
     Route::group(['prefix' => 'auth'], function () {
