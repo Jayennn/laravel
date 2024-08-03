@@ -6,7 +6,9 @@ use App\Models\Book;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class BookController extends Controller
 {
@@ -16,20 +18,48 @@ class BookController extends Controller
         if($books->isEmpty()){
             return $this->notFoundResponse($books, "Books not found");
         }
+
+
         return $this->successResponse($books, "Books retrieved successfully");
     }
 
-    function store(Request $request): JsonResponse
+    public function store(Request $request): JsonResponse
     {
         $validated = Validator::make($request->all(), [
             'title' => 'required|string',
             'category_id' => 'required|integer',
+            'cover' => 'required|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
+        if ($validated->fails()) {
+            return $this->invalidFieldResponse($validated->errors());
+        }
 
-        $book = Book::create($validated);
+        if (!$request->hasFile('cover')) {
+            return $this->errorResponse(null, "Image upload failed", 400);
+        }
 
-        return response()->json($book, 201);
+        // take request file
+        $image = $request->file('cover');
+
+        // randomize image name
+        $imageName = Str::random(32) . '.' . $image->getClientOriginalExtension();
+
+        // store file in storage create folder books
+        $imagePath = $image->storeAs('books', $imageName, 'public');
+
+        // convert name with storage path
+        $imageUrl = Storage::url($imagePath);
+
+        $book = Book::create([
+            'title' => $request->title,
+            'category_id' => (int) $request->category_id,
+            'cover' => $imageName,
+        ]);
+
+        $book->cover_url = $imageUrl; // Add the cover URL to the response
+
+        return $this->successResponse($book, "Book created successfully", 201);
     }
 
     function show(int $id): JsonResponse
